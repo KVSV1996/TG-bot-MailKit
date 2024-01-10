@@ -32,7 +32,8 @@ namespace TelegramBot
                     countOfMails = inbox.Count;
                     flagCount = false;
                     Log.Verbose(inbox.Count + "  " + "false");                    
-                }               
+                }
+                Console.WriteLine(inbox.Count + " " + countOfMails);
 
                 for (int i = countOfMails; i < inbox.Count;)
                 {

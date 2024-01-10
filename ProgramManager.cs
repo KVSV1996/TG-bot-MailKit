@@ -17,6 +17,7 @@ namespace TelegramBot
         private readonly ImapClient _client;
         private MailKit _mailKit;
         private readonly List<long> _subscribers;
+        private bool flag = true;
 
         public ProgramManager(ImapClient client, ICommunication communication, ITelegramBotClient botClient)
         {
@@ -42,6 +43,13 @@ namespace TelegramBot
                 return;
             }
 
+            if(flag)
+            {
+                //await MailKitAsync(massage, botClient);
+                StartMailKitProcessing(massage, botClient);
+                flag = false;
+            }            
+
             if (massage.Text != null)
             {
                 if (massage.Text == "/start")
@@ -51,20 +59,26 @@ namespace TelegramBot
                     {
                         _subscribers.Add(massage.Chat.Id);
                         await Console.Out.WriteLineAsync(massage.Chat.Id.ToString());
-                    }                        
+                    }
                     await botClient.SendTextMessageAsync(massage.Chat.Id, Constants.Head);
                     return;
                 }
-
-                await MailKitAsync(massage, botClient);
             }
             else
             {
                 Log.Error($"ID[{massage.Chat.Id}]: TypeException. User enter: {massage.Text}");
                 await botClient.SendTextMessageAsync(massage.Chat.Id, Constants.TypeException);
             }
+
+
+
         }
-        
+
+        private void StartMailKitProcessing(Message message, ITelegramBotClient botClient)
+        {
+            Task.Run(() => MailKitAsync(message, botClient));
+        }
+
         private async Task MailKitAsync(Message massage, ITelegramBotClient botClient)
         {
             _mailKit = new MailKit(_client);
@@ -78,13 +92,13 @@ namespace TelegramBot
                         var mailContent = _mailKit.Mail(); // Получаем содержимое почты
                         if (!(mailContent == null))
                         {
-                            //foreach (var chatId in _subscribers)
-                            //{
-                                await botClient.SendTextMessageAsync(massage.Chat.Id, String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", mailContent.Subject, mailContent.From, mailContent.Date));
-                                await Console.Out.WriteLineAsync(massage.Chat.Id.ToString());
-                            //}
+                            foreach (var chatId in _subscribers)
+                            {
+                                await botClient.SendTextMessageAsync(chatId, String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", mailContent.Subject, mailContent.From, mailContent.Date));
+                                await Console.Out.WriteLineAsync(chatId.ToString());
+                            }
                             
-                            Log.Verbose(String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", mailContent.Subject, mailContent.From, mailContent.Date));
+                            Log.Information(String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", mailContent.Subject, mailContent.From, mailContent.Date));
                         }
                     }
                     else
