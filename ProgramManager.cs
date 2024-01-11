@@ -44,11 +44,22 @@ namespace TelegramBot
             }
 
             if(flag)
-            {
-                //await MailKitAsync(massage, botClient);
-                StartMailKitProcessing(massage, botClient);
+            {                
+                StartMailKitProcessing(botClient);
                 flag = false;
-            }            
+            }
+
+            if (massage.ReplyToMessage != null )
+            {
+                var originalMessageId = massage.ReplyToMessage.MessageId;
+                //Console.WriteLine($"ID цитированного сообщения: {originalMessageId}");
+
+                await botClient.DeleteMessageAsync(massage.Chat.Id, massage.ReplyToMessage.MessageId);
+                await botClient.DeleteMessageAsync(massage.Chat.Id, massage.MessageId);
+
+
+                return;
+            }
 
             if (massage.Text != null)
             {
@@ -63,7 +74,9 @@ namespace TelegramBot
                     await botClient.SendTextMessageAsync(massage.Chat.Id, Constants.Head);
                     return;
                 }
+                return;
             }
+            
             else
             {
                 Log.Error($"ID[{massage.Chat.Id}]: TypeException. User enter: {massage.Text}");
@@ -74,12 +87,12 @@ namespace TelegramBot
 
         }
 
-        private void StartMailKitProcessing(Message message, ITelegramBotClient botClient)
+        private void StartMailKitProcessing(ITelegramBotClient botClient)
         {
-            Task.Run(() => MailKitAsync(message, botClient));
+            Task.Run(() => MailKitAsync(botClient));
         }
 
-        private async Task MailKitAsync(Message massage, ITelegramBotClient botClient)
+        private async Task MailKitAsync(ITelegramBotClient botClient)
         {
             _mailKit = new MailKit(_client);
 
