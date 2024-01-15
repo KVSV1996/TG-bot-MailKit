@@ -21,7 +21,7 @@ namespace TelegramBot
         private List<long> _subscribers;
         private bool flag = true;
         private Users _user;
-        MailStorage storage = new MailStorage();
+        MailStorage _storage;
 
         public ProgramManager(ImapClient client, ICommunication communication, ITelegramBotClient botClient)
         {
@@ -29,8 +29,9 @@ namespace TelegramBot
             this._communication = communication ?? throw new ArgumentNullException(nameof(communication));
             this._botClient = botClient ?? throw new ArgumentNullException(nameof(botClient));
             _subscribers = new List<long>();
-            _user = new Users();
-            _imapIdle = new IdleClient(_user);
+            _storage = new MailStorage();
+            _imapIdle = new IdleClient(_storage);
+           
         }       
 
         public void InitialiseBot()
@@ -114,16 +115,36 @@ namespace TelegramBot
         {
             while (true)
             {
-                if(_user.Subject != null)
+                //bool t = _storage.HasNewMessages();
+                if (_storage.HasNewMessages())
                 {
+                    var mailContent = _storage.GetMessage();
+                    string fromMail;
+
+                    await Console.Out.WriteLineAsync(mailContent.To);
+                    await Console.Out.WriteLineAsync(mailContent.Cc);
+
+                    if (mailContent.To.Contains("support@callway.com.ua") || mailContent.Cc.Contains("support@callway.com.ua"))
+                    {
+                        fromMail = "support@callway.com.ua";
+                    }                    
+                    else if (mailContent.To.Contains("support@ukrods.com.ua") || mailContent.Cc.Contains("support@ukrods.com.ua"))
+                    {
+                        fromMail = "support@ukrods.com.ua";
+                    }
+                    else
+                    {
+                        fromMail = "Unknown";
+                    }
+
                     foreach (var chatId in _subscribers)
                     {
                         //await Console.Out.WriteLineAsync($"Subject: {_user.Subject}");
-                        //await botClient.SendTextMessageAsync(chatId, String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", mailContent.Subject, mailContent.From, mailContent.Date));
-                        await botClient.SendTextMessageAsync(chatId, _user.Subject);
+                        await botClient.SendTextMessageAsync(chatId, String.Format("На пошту: {0}  \nТема: {1} \nВід: {2} \nДата: {3} ", fromMail, mailContent.Subject, mailContent.From, mailContent.Date));
+
+                        //await botClient.SendTextMessageAsync(chatId, _user.Subject);
                         //await Console.Out.WriteLineAsync(chatId.ToString());
-                    }
-                    _user.Subject = null;
+                    }                    
                 }
 
             }

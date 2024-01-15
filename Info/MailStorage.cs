@@ -13,12 +13,7 @@ namespace TelegramBot.Info
         public void AddMessage(EmailMessageInfo message)
         {
             messages.Add(message);
-        }
-
-        public IEnumerable<EmailMessageInfo> GetAllMessages()
-        {
-            return messages;
-        }
+        }      
 
         // Метод для проверки наличия новых сообщений
         public bool HasNewMessages()
@@ -27,7 +22,7 @@ namespace TelegramBot.Info
         }
 
         // Метод для получения и удаления сообщений из хранилища
-        public EmailMessageInfo GetNextMessage()
+        public EmailMessageInfo GetMessage()
         {
             if (messages.Count == 0)
             {

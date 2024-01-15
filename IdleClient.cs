@@ -22,16 +22,17 @@ namespace TelegramBot
         private readonly Configuration configuration = new Configuration();
         ITelegramBotClient botClient;
         private Users _user;
-        MailStorage storage = new MailStorage();
+        MailStorage _storage;
 
 
-        public IdleClient(Users user)
+        public IdleClient(MailStorage storage)
         {
+            this._storage = storage ?? throw new ArgumentNullException(nameof(storage));
             client = new ImapClient(new ProtocolLogger(Console.OpenStandardError()));
             request = new FetchRequest(MessageSummaryItems.Full | MessageSummaryItems.UniqueId);
             messages = new List<IMessageSummary>();
             cancel = new CancellationTokenSource();
-            _user = user;
+            
 
         }
 
@@ -68,25 +69,29 @@ namespace TelegramBot
                 //if (!(message == null))
                 //{
 
-                    ///user.MimeMessage = message;
-                    //foreach (var chatId in user.subscribers)
-                    //{
-                    //    await botClient.SendTextMessageAsync(chatId, String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", message.Subject, message.From, message.Date));
-                    //    await Console.Out.WriteLineAsync(chatId.ToString());
-                    //}
-                    _user.Subject = String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", message.Subject, message.From, message.Date);
+                ///user.MimeMessage = message;
+                //foreach (var chatId in user.subscribers)
+                //{
+                //    await botClient.SendTextMessageAsync(chatId, String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", message.Subject, message.From, message.Date));
+                //    await Console.Out.WriteLineAsync(chatId.ToString());
+                //}
+                //await Console.Out.WriteLineAsync("Cc" + message.Cc.ToString());
+                //await Console.Out.WriteLineAsync("To" + message.To.ToString());
+                //_user.Subject = String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", message.Subject, message.From, message.Date);
 
 
-                    //var emailInfo = new EmailMessageInfo
-                    //{
-                    //    Subject = message.Subject,
-                    //    From = string.Join(", ", message.From.Select(m => m.ToString())),
-                    //    Date = message.Date
-                    //};
+                var emailInfo = new EmailMessageInfo
+                {
+                    To = message.To.ToString(),
+                    Cc = message.Cc.ToString(),
+                    Subject = message.Subject,
+                    From = message.From.ToString(),
+                    Date = message.Date
+                };
 
-                    //storage.AddMessage(emailInfo);
+                _storage.AddMessage(emailInfo);
 
-                    Log.Information(String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", message.Subject, message.From, message.Date));
+                Log.Information(String.Format("Subject: {0} \nFrom: {1} \nDate: {2} \nTo: {3} \nCc: {4}", message.Subject, message.From, message.Date, message.To, message.Cc));
                 //}               
 
                 return; // Если новых сообщений нет
