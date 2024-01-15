@@ -1,8 +1,11 @@
 ﻿using MailKit;
 using MailKit.Net.Imap;
+using MimeKit;
 using Serilog;
 using System.Configuration;
 using Telegram.Bot;
+using Telegram.Bot.Types;
+using TelegramBot.Info;
 
 namespace TelegramBot
 {
@@ -18,15 +21,18 @@ namespace TelegramBot
         private int countOfMails;
         private readonly Configuration configuration = new Configuration();
         ITelegramBotClient botClient;
-        private Users user = new Users();
+        private Users _user;
+        MailStorage storage = new MailStorage();
 
 
-        public IdleClient()
+        public IdleClient(Users user)
         {
             client = new ImapClient(new ProtocolLogger(Console.OpenStandardError()));
             request = new FetchRequest(MessageSummaryItems.Full | MessageSummaryItems.UniqueId);
             messages = new List<IMessageSummary>();
             cancel = new CancellationTokenSource();
+            _user = user;
+
         }
 
         async Task ReconnectAsync()
@@ -59,16 +65,29 @@ namespace TelegramBot
                 //Console.WriteLine(inbox.Count + " " + countOfMails);
                 var message = inbox.GetMessage(countOfMails - 1);
 
-                if (!(message == null && user.subscribers == null))
-                {
-                    foreach (var chatId in user.subscribers)
-                    {
-                        await botClient.SendTextMessageAsync(chatId, String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", message.Subject, message.From, message.Date));
-                        await Console.Out.WriteLineAsync(chatId.ToString());
-                    }
+                //if (!(message == null))
+                //{
+
+                    ///user.MimeMessage = message;
+                    //foreach (var chatId in user.subscribers)
+                    //{
+                    //    await botClient.SendTextMessageAsync(chatId, String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", message.Subject, message.From, message.Date));
+                    //    await Console.Out.WriteLineAsync(chatId.ToString());
+                    //}
+                    _user.Subject = message.Subject;
+
+
+                    //var emailInfo = new EmailMessageInfo
+                    //{
+                    //    Subject = message.Subject,
+                    //    From = string.Join(", ", message.From.Select(m => m.ToString())),
+                    //    Date = message.Date
+                    //};
+
+                    //storage.AddMessage(emailInfo);
 
                     Log.Information(String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", message.Subject, message.From, message.Date));
-                }               
+                //}               
 
                 return; // Если новых сообщений нет
             }

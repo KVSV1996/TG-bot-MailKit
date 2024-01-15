@@ -7,6 +7,7 @@ using System.Net.Mail;
 using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramBot.Info;
 
 namespace TelegramBot
 {
@@ -15,18 +16,21 @@ namespace TelegramBot
         private readonly ICommunication _communication;
         private readonly ITelegramBotClient _botClient;
         private readonly ImapClient _client;
-        private readonly IdleClient imapIdle = new IdleClient();
+        private readonly IdleClient _imapIdle;
         private MailKit _mailKit;
-        //private List<long> _subscribers;
+        private List<long> _subscribers;
         private bool flag = true;
-        private Users user = new Users();
+        private Users _user;
+        MailStorage storage = new MailStorage();
 
         public ProgramManager(ImapClient client, ICommunication communication, ITelegramBotClient botClient)
         {
             this._client = client ?? throw new ArgumentNullException(nameof(client));
             this._communication = communication ?? throw new ArgumentNullException(nameof(communication));
             this._botClient = botClient ?? throw new ArgumentNullException(nameof(botClient));
-            //_subscribers = new List<long>();
+            _subscribers = new List<long>();
+            _user = new Users();
+            _imapIdle = new IdleClient(_user);
         }       
 
         public void InitialiseBot()
@@ -34,13 +38,13 @@ namespace TelegramBot
             _botClient.StartReceiving(UpdateAsync, Exeption);
 
             
-            var idleTask = imapIdle.RunAsync();
+            var idleTask = _imapIdle.RunAsync();
 
             Task.Run(() => {
                 Console.ReadKey(true);
             }).Wait();
 
-            imapIdle.Exit();
+            _imapIdle.Exit();
 
             idleTask.GetAwaiter().GetResult();
         }     
@@ -57,13 +61,13 @@ namespace TelegramBot
 
             if(flag)
             {                
-                //StartMailKitProcessing(botClient);
+                StartMailKitProcessing(botClient);
                 flag = false;
             }
 
             if (massage.ReplyToMessage != null )
             {
-                var originalMessageId = massage.ReplyToMessage.MessageId;
+                //var originalMessageId = massage.ReplyToMessage.MessageId;
                 //Console.WriteLine($"ID цитированного сообщения: {originalMessageId}");
 
                 await botClient.DeleteMessageAsync(massage.Chat.Id, massage.ReplyToMessage.MessageId);
@@ -80,9 +84,9 @@ namespace TelegramBot
                 if (massage.Text == "/start")
                 {
                     Log.Information($"ID[{massage.Chat.Id}]: /start");
-                    if (!user.subscribers.Contains(massage.Chat.Id))
+                    if (!_subscribers.Contains(massage.Chat.Id))
                     {
-                        user.subscribers.Add(massage.Chat.Id);
+                        _subscribers.Add(massage.Chat.Id);
                         await Console.Out.WriteLineAsync(massage.Chat.Id.ToString());
                     }
                     await botClient.SendTextMessageAsync(massage.Chat.Id, Constants.Head);
@@ -103,7 +107,38 @@ namespace TelegramBot
 
         private void StartMailKitProcessing(ITelegramBotClient botClient)
         {
-            Task.Run(() => MailKitAsync(botClient));
+            Task.Run(() => CheckAndDisplayMessagesAsync(botClient));
+        }
+
+        public async Task CheckAndDisplayMessagesAsync(ITelegramBotClient botClient)
+        {
+            while (true)
+            {
+                if(_user.Subject != null)
+                {
+                    foreach (var chatId in _subscribers)
+                    {
+                        //await Console.Out.WriteLineAsync($"Subject: {_user.Subject}");
+                        //await botClient.SendTextMessageAsync(chatId, String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", mailContent.Subject, mailContent.From, mailContent.Date));
+                        await botClient.SendTextMessageAsync(chatId, $"Subject: {_user.Subject}");
+                        //await Console.Out.WriteLineAsync(chatId.ToString());
+                    }
+                    _user.Subject = null;
+                }
+
+            }
+
+            //while (storage.HasNewMessages())
+            //{
+            //    var messageInfo = storage.GetNextMessage();
+            //    if (messageInfo != null)
+            //    {
+            //        // Вывод сообщения
+            //        Console.WriteLine($"Subject: {messageInfo.Subject} \nFrom: {messageInfo.From} \nDate: {messageInfo.Date}");
+            //        // Отправка сообщения через бота, если требуется
+            //        // await botClient.SendTextMessageAsync(chatId, $"Subject: {messageInfo.Subject} \nFrom: {messageInfo.From} \nDate: {messageInfo.Date}");
+            //    }
+            //}
         }
 
         private async Task MailKitAsync(ITelegramBotClient botClient)
@@ -119,7 +154,7 @@ namespace TelegramBot
                         var mailContent = _mailKit.Mail(); // Получаем содержимое почты
                         if (!(mailContent == null))
                         {
-                            foreach (var chatId in user.subscribers)
+                            foreach (var chatId in _user.subscribers)
                             {
                                 await botClient.SendTextMessageAsync(chatId, String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", mailContent.Subject, mailContent.From, mailContent.Date));
                                 await Console.Out.WriteLineAsync(chatId.ToString());
@@ -138,7 +173,7 @@ namespace TelegramBot
                     Log.Error($"Произошла ошибка при работе с почтой: {ex.Message}");
                     // Здесь можно добавить дополнительную логику обработки ошибок, если нужно
                 }
-                await Task.Delay(1000); // Асинхронная задержка
+                //await Task.Delay(1000); // Асинхронная задержка
             }
         }       
 
