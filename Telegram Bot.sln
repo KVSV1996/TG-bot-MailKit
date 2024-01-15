@@ -7,14 +7,26 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Telegram Bot", "Telegram Bo
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Bot|Any CPU = Bot|Any CPU
+		Bot|x64 = Bot|x64
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{950F663B-CAE8-49C3-A94D-CDD661BF9F15}.Bot|Any CPU.ActiveCfg = Bot|Any CPU
+		{950F663B-CAE8-49C3-A94D-CDD661BF9F15}.Bot|Any CPU.Build.0 = Bot|Any CPU
+		{950F663B-CAE8-49C3-A94D-CDD661BF9F15}.Bot|x64.ActiveCfg = Bot|x64
+		{950F663B-CAE8-49C3-A94D-CDD661BF9F15}.Bot|x64.Build.0 = Bot|x64
 		{950F663B-CAE8-49C3-A94D-CDD661BF9F15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{950F663B-CAE8-49C3-A94D-CDD661BF9F15}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{950F663B-CAE8-49C3-A94D-CDD661BF9F15}.Debug|x64.ActiveCfg = Debug|x64
+		{950F663B-CAE8-49C3-A94D-CDD661BF9F15}.Debug|x64.Build.0 = Debug|x64
 		{950F663B-CAE8-49C3-A94D-CDD661BF9F15}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{950F663B-CAE8-49C3-A94D-CDD661BF9F15}.Release|Any CPU.Build.0 = Release|Any CPU
+		{950F663B-CAE8-49C3-A94D-CDD661BF9F15}.Release|x64.ActiveCfg = Release|x64
+		{950F663B-CAE8-49C3-A94D-CDD661BF9F15}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
