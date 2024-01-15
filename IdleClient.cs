@@ -63,7 +63,7 @@ namespace TelegramBot
                     //Log.Verbose(inbox.Count + "  " + "false");
                 }
                 //Console.WriteLine(inbox.Count + " " + countOfMails);
-                var message = inbox.GetMessage(countOfMails - 1);
+                var message = inbox.GetMessage(inbox.Count - 1);
 
                 //if (!(message == null))
                 //{
@@ -74,7 +74,7 @@ namespace TelegramBot
                     //    await botClient.SendTextMessageAsync(chatId, String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", message.Subject, message.From, message.Date));
                     //    await Console.Out.WriteLineAsync(chatId.ToString());
                     //}
-                    _user.Subject = message.Subject;
+                    _user.Subject = String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", message.Subject, message.From, message.Date);
 
 
                     //var emailInfo = new EmailMessageInfo

@@ -120,7 +120,7 @@ namespace TelegramBot
                     {
                         //await Console.Out.WriteLineAsync($"Subject: {_user.Subject}");
                         //await botClient.SendTextMessageAsync(chatId, String.Format("Subject: {0} \nFrom: {1} \nDate: {2} ", mailContent.Subject, mailContent.From, mailContent.Date));
-                        await botClient.SendTextMessageAsync(chatId, $"Subject: {_user.Subject}");
+                        await botClient.SendTextMessageAsync(chatId, _user.Subject);
                         //await Console.Out.WriteLineAsync(chatId.ToString());
                     }
                     _user.Subject = null;
