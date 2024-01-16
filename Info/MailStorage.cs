@@ -1,28 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TelegramBot.Info
+﻿namespace TelegramBot.Info
 {
-    public class MailStorage
+    public class MailStorage : IMailStorage
     {
-        private readonly List<EmailMessageInfo> messages = new List<EmailMessageInfo>();
+        private readonly List<EmailMessage> messages = new List<EmailMessage>();
 
-        public void AddMessage(EmailMessageInfo message)
+        public void AddMessage(EmailMessage message)
         {
             messages.Add(message);
-        }      
-
-        // Метод для проверки наличия новых сообщений
+        }     
+        
         public bool HasNewMessages()
         {
             return messages.Count > 0;
         }
-
-        // Метод для получения и удаления сообщений из хранилища
-        public EmailMessageInfo GetMessage()
+        
+        public EmailMessage GetMessage()
         {
             if (messages.Count == 0)
             {
@@ -33,5 +25,5 @@ namespace TelegramBot.Info
             messages.RemoveAt(0);
             return message;
         }
-    }
+    }    
 }

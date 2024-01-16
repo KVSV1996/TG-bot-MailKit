@@ -3,19 +3,20 @@ using Microsoft.Extensions.DependencyInjection;
 using Refit;
 using Telegram.Bot;
 using MailKit.Net.Imap;
+using TelegramBot.Info;
 
 namespace TelegramBot
 {
     public class Program
     {        
-        public static void Main(string[] args)
+        public static void Main()
         {
             
             Configuration configuration = new ();
             var serviceProvider = new ServiceCollection()             
             .AddSingleton<ITelegramBotClient>(t => new TelegramBotClient(configuration.Token))            
             .AddSingleton<ICommunication, ConsoleCommunication>()
-            .AddSingleton<ImapClient>()
+            .AddSingleton<IMailStorage, MailStorage>()            
             .AddSingleton<ProgramManager>()
             .BuildServiceProvider();
 
