@@ -1,6 +1,7 @@
 ﻿using Serilog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using TelegramBot.Info;
 
 namespace TelegramBot
@@ -80,13 +81,7 @@ namespace TelegramBot
                     return;
                 }
                 return;
-            }
-            
-            else
-            {
-                Log.Error($"ID[{massage.Chat.Id}]: TypeException. User enter: {massage.Text}");
-                await botClient.SendTextMessageAsync(massage.Chat.Id, Constants.TypeException);
-            }
+            }                      
         }
 
         private void StartMailKitProcessing(ITelegramBotClient botClient)
@@ -101,12 +96,12 @@ namespace TelegramBot
                 if (_storage.HasNewMessages())
                 {
                     var mailContent = _storage.GetMessage();
-                    string fromMail;                    
+                    string fromMail;
 
                     if (mailContent.To.Contains("support@callway.com.ua") || mailContent.Cc.Contains("support@callway.com.ua"))
                     {
                         fromMail = "support@callway.com.ua";
-                    }                    
+                    }
                     else if (mailContent.To.Contains("support@ukrods.com.ua") || mailContent.Cc.Contains("support@ukrods.com.ua"))
                     {
                         fromMail = "support@ukrods.com.ua";
@@ -117,11 +112,11 @@ namespace TelegramBot
                     }
 
                     foreach (var chatId in _subscribers)
-                    {                        
-                        await botClient.SendTextMessageAsync(chatId, String.Format("На пошту: {0}  \nТема: {1} \nВід: {2} \nДата: {3} ", fromMail, mailContent.Subject, mailContent.From, mailContent.Date));                        
+                    {
+                        await botClient.SendTextMessageAsync(chatId, String.Format("\u267F *Нове повідомлення на пошті*  \n\nНа пошту: {0}  \nТема: {1} \nВід: {2} \nДата: {3} \n\n _Нагадування про необхідність обробити почту, та відповісти на дане повідомлення_", fromMail, mailContent.Subject, mailContent.From, mailContent.Date), ParseMode.Markdown);
                     }
 
-                    Log.Information("Очікування нового повідомлення");                    
+                    Log.Information("Очікування нового повідомлення");
                 }
             }            
         }              

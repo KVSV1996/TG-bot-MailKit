@@ -10,8 +10,7 @@ namespace TelegramBot
     public class Program
     {        
         public static void Main()
-        {
-            
+        {            
             Configuration configuration = new ();
             var serviceProvider = new ServiceCollection()             
             .AddSingleton<ITelegramBotClient>(t => new TelegramBotClient(configuration.Token))            
@@ -25,7 +24,7 @@ namespace TelegramBot
             Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .WriteTo.Console()
-            .WriteTo.File("log.txt", rollingInterval: RollingInterval.Day)
+            .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
             .CreateLogger();
 
             manager.InitialiseBot();            
