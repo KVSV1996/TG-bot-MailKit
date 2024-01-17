@@ -1,6 +1,6 @@
 ﻿namespace TelegramBot.Info
 {
-    public class EmailMessage
+    public class EmailMessage       //додаємо поля
     {
         public string? To { get; set; }
         public string? Cc { get; set; }

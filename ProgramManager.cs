@@ -29,10 +29,10 @@ namespace TelegramBot
 
         public void InitialiseBot()
         {                     
-            _botClient.StartReceiving(UpdateAsync, Exeption);
+            _botClient.StartReceiving(UpdateAsync, Exeption);       //запускаємо бота
 
             
-            var idleTask = _imapIdle.RunAsync();
+            var idleTask = _imapIdle.RunAsync();        //запускаємо поштовик
 
             Task.Run(() => {
                 _communication.ReadLine();
@@ -55,11 +55,11 @@ namespace TelegramBot
 
             if(flag)
             {                
-                StartMailKitProcessing(botClient);
+                StartMailKitProcessing(botClient);      //запускаємо моніторинг наявності нових листів, для розуміння див. клас IdleClient
                 flag = false;
             }
 
-            if (massage.ReplyToMessage != null )
+            if (massage.ReplyToMessage != null )        //видалення цитованих повідомлень
             {               
                 await botClient.DeleteMessageAsync(massage.Chat.Id, massage.ReplyToMessage.MessageId);
                 await botClient.DeleteMessageAsync(massage.Chat.Id, massage.MessageId);
@@ -72,7 +72,7 @@ namespace TelegramBot
                 if (massage.Text == "/start")
                 {
                     Log.Information($"ID[{massage.Chat.Id}]: /start");
-                    if (!_subscribers.Contains(massage.Chat.Id))
+                    if (!_subscribers.Contains(massage.Chat.Id))        //додавання чат ID в список користувачів бота
                     {
                         _subscribers.Add(massage.Chat.Id);
                         await Console.Out.WriteLineAsync(massage.Chat.Id.ToString());
@@ -91,14 +91,14 @@ namespace TelegramBot
 
         public async Task CheckAndDisplayMessagesAsync(ITelegramBotClient botClient)
         {
-            while (true)
+            while (true)        //бескінечний цикл
             {                
-                if (_storage.HasNewMessages())
+                if (_storage.HasNewMessages())      //перевіряємо на наявність повідомлень
                 {
-                    var mailContent = _storage.GetMessage();
+                    var mailContent = _storage.GetMessage();        //отримуємо повідомлення
                     string fromMail;
 
-                    if (mailContent.To.Contains("support@callway.com.ua") || mailContent.Cc.Contains("support@callway.com.ua"))
+                    if (mailContent.To.Contains("support@callway.com.ua") || mailContent.Cc.Contains("support@callway.com.ua"))     //перевіряємо, з якої пошти надішло повідомлення
                     {
                         fromMail = "support@callway.com.ua";
                     }
@@ -111,7 +111,7 @@ namespace TelegramBot
                         fromMail = "Unknown";
                     }
 
-                    foreach (var chatId in _subscribers)
+                    foreach (var chatId in _subscribers)        //виводимо повідомлення користувачам, що підписалися
                     {
                         await botClient.SendTextMessageAsync(chatId, String.Format("\u267F *Нове повідомлення на пошті*  \n\nНа пошту: {0}  \nТема: {1} \nВід: {2} \nДата: {3} \n\n _Нагадування про необхідність обробити почту, та відповісти на дане повідомлення_", fromMail, mailContent.Subject, mailContent.From, mailContent.Date), ParseMode.Markdown);
                     }
