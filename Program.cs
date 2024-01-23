@@ -18,8 +18,7 @@ namespace TelegramBot
             Configuration configuration = new (configPath);
             var serviceProvider = new ServiceCollection()
             .AddSingleton<Configuration>(new Configuration(configPath))
-            .AddSingleton<ITelegramBotClient>(t => new TelegramBotClient(configuration.Token))            
-            .AddSingleton<ICommunication, ConsoleCommunication>()
+            .AddSingleton<ITelegramBotClient>(t => new TelegramBotClient(configuration.Token))                   
             .AddSingleton<IMailStorage, MailStorage>()            
             .AddSingleton<ProgramManager>()
             .BuildServiceProvider();

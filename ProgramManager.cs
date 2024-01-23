@@ -8,8 +8,7 @@ using System.Threading;
 namespace TelegramBot
 {
     public class ProgramManager
-    {
-        //private readonly ICommunication _communication;
+    {        
         private readonly ITelegramBotClient _botClient;        
         private readonly IdleClient _imapIdle;        
         private List<long> _subscribers;
@@ -94,7 +93,7 @@ namespace TelegramBot
             Task.Run(() => CheckAndDisplayMessagesAsync(botClient));
         }
 
-        public async Task CheckAndDisplayMessagesAsync(ITelegramBotClient botClient)
+        private async Task CheckAndDisplayMessagesAsync(ITelegramBotClient botClient)
         {
             while (true)        //бескінечний цикл
             {                
