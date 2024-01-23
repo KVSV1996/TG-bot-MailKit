@@ -4,32 +4,42 @@ using Refit;
 using Telegram.Bot;
 using MailKit.Net.Imap;
 using TelegramBot.Info;
+using Topshelf;
+using System.Reflection;
+
 
 namespace TelegramBot
 {
     public class Program
     {        
         public static void Main()
-        {            
-            Configuration configuration = new ();
-            var serviceProvider = new ServiceCollection()             
+        {
+            string configPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "appsettings.json");            
+            Configuration configuration = new (configPath);
+            var serviceProvider = new ServiceCollection()
+            .AddSingleton<Configuration>(new Configuration(configPath))
             .AddSingleton<ITelegramBotClient>(t => new TelegramBotClient(configuration.Token))            
             .AddSingleton<ICommunication, ConsoleCommunication>()
             .AddSingleton<IMailStorage, MailStorage>()            
             .AddSingleton<ProgramManager>()
             .BuildServiceProvider();
+            
 
-            var manager = serviceProvider.GetRequiredService<ProgramManager>();
+            HostFactory.Run(x =>
+            {
+                x.Service<ProgramManager>(s =>
+                {                    
+                    s.ConstructUsing(name => serviceProvider.GetRequiredService<ProgramManager>());
+                    s.WhenStarted(tc => tc.Start());
+                    s.WhenStopped(tc => tc.Stop());
+                });
+                x.RunAsLocalSystem();
 
-            Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .WriteTo.Console()
-            .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
-            .CreateLogger();
-
-            manager.InitialiseBot();            
-
-            Log.CloseAndFlush();
+                x.SetDescription("Телеграм бот для для работы с почтой");
+                x.SetDisplayName("TGBotMail");
+                x.SetServiceName("TGBotMail");
+            });
+            
         }
     }
 }

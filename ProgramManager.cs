@@ -3,50 +3,55 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TelegramBot.Info;
+using System.Threading;
 
 namespace TelegramBot
 {
     public class ProgramManager
     {
-        private readonly ICommunication _communication;
+        //private readonly ICommunication _communication;
         private readonly ITelegramBotClient _botClient;        
         private readonly IdleClient _imapIdle;        
         private List<long> _subscribers;
         private bool flag = true;
         private readonly IMailStorage _storage;
+        private readonly Configuration _configuration;
 
 
-        public ProgramManager(ICommunication communication, ITelegramBotClient botClient, IMailStorage storage)
+        public ProgramManager( ITelegramBotClient botClient, IMailStorage storage, Configuration configuration)
         {
-            this._communication = communication ?? throw new ArgumentNullException(nameof(communication));
+            this._configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             this._botClient = botClient ?? throw new ArgumentNullException(nameof(botClient));
             this._storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _subscribers = new List<long>();
             _storage = new MailStorage();
-            _imapIdle = new IdleClient(_storage);
+            _imapIdle = new IdleClient(_storage, _configuration);
            
-        }       
+        }
 
-        public void InitialiseBot()
-        {                     
+        public void Start()
+        {          
             _botClient.StartReceiving(UpdateAsync, Exeption);       //запускаємо бота
+            var idleTask = _imapIdle.RunAsync();                //запускаємо поштовик
+        }
+        public void Stop()
+        {
+            _imapIdle.Exit();           
 
-            
-            var idleTask = _imapIdle.RunAsync();        //запускаємо поштовик
+            Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.Console()
+            .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
+            .CreateLogger();                        
 
-            Task.Run(() => {
-                _communication.ReadLine();
-            }).Wait();
-
-            _imapIdle.Exit();
-
-            idleTask.GetAwaiter().GetResult();
-        }     
-
+            Log.CloseAndFlush();
+        }      
 
         private async Task UpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken token)
         {           
             var massage = update.Message;
+            DateTime now = DateTime.UtcNow;
+
 
             if (massage == null)
             {
@@ -57,11 +62,11 @@ namespace TelegramBot
             {                
                 StartMailKitProcessing(botClient);      //запускаємо моніторинг наявності нових листів, для розуміння див. клас IdleClient
                 flag = false;
-            }
+            }            
 
-            if (massage.ReplyToMessage != null )        //видалення цитованих повідомлень
+            if (massage.ReplyToMessage != null && (now - massage.ReplyToMessage.Date).TotalHours < 48 )        //видалення цитованих повідомлень
             {               
-                await botClient.DeleteMessageAsync(massage.Chat.Id, massage.ReplyToMessage.MessageId);
+                await botClient.DeleteMessageAsync(massage.Chat.Id, massage.ReplyToMessage.MessageId);                
                 await botClient.DeleteMessageAsync(massage.Chat.Id, massage.MessageId);
 
                 return;
@@ -98,23 +103,28 @@ namespace TelegramBot
                     var mailContent = _storage.GetMessage();        //отримуємо повідомлення
                     string fromMail;
 
-                    if (mailContent.To.Contains("support@callway.com.ua") || mailContent.Cc.Contains("support@callway.com.ua"))     //перевіряємо, з якої пошти надішло повідомлення
+                    if (mailContent.Subject.Substring(0,2) != "RE")
                     {
-                        fromMail = "support@callway.com.ua";
-                    }
-                    else if (mailContent.To.Contains("support@ukrods.com.ua") || mailContent.Cc.Contains("support@ukrods.com.ua"))
-                    {
-                        fromMail = "support@ukrods.com.ua";
-                    }
-                    else
-                    {
-                        fromMail = "Unknown";
+                        if (mailContent.To.Contains("support@callway.com.ua") || mailContent.Cc.Contains("support@callway.com.ua"))     //перевіряємо, з якої пошти надішло повідомлення
+                        {
+                            fromMail = "support@callway.com.ua";
+                        }
+                        else if (mailContent.To.Contains("support@ukrods.com.ua") || mailContent.Cc.Contains("support@ukrods.com.ua"))
+                        {
+                            fromMail = "support@ukrods.com.ua";
+                        }
+                        else
+                        {
+                            fromMail = "Unknown";
+                        }
+
+                        foreach (var chatId in _subscribers)        //виводимо повідомлення користувачам, що підписалися
+                        {
+                            await botClient.SendTextMessageAsync(chatId, String.Format("\u267F *Нове повідомлення на пошті*  \n\nНа пошту: {0}  \nТема: {1} \nВід: {2} \nДата: {3} \n\n _Нагадування про необхідність обробити почту, та відповісти на дане повідомлення_", fromMail, mailContent.Subject, mailContent.From, mailContent.Date), ParseMode.Markdown);
+                        }
                     }
 
-                    foreach (var chatId in _subscribers)        //виводимо повідомлення користувачам, що підписалися
-                    {
-                        await botClient.SendTextMessageAsync(chatId, String.Format("\u267F *Нове повідомлення на пошті*  \n\nНа пошту: {0}  \nТема: {1} \nВід: {2} \nДата: {3} \n\n _Нагадування про необхідність обробити почту, та відповісти на дане повідомлення_", fromMail, mailContent.Subject, mailContent.From, mailContent.Date), ParseMode.Markdown);
-                    }
+                    
 
                     Log.Information("Очікування нового повідомлення");
                 }

@@ -12,12 +12,13 @@ namespace TelegramBot
         private CancellationTokenSource done;
         private readonly ImapClient client;
         private bool messagesArrived;        
-        private readonly Configuration configuration = new Configuration();
+        private readonly Configuration _configuration;
         private readonly IMailStorage _storage;
 
-        public IdleClient(IMailStorage storage)
+        public IdleClient(IMailStorage storage, Configuration configuration)
         {
             this._storage = storage ?? throw new ArgumentNullException(nameof(storage));
+            this._configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             client = new ImapClient(new ProtocolLogger(Console.OpenStandardError()));            
             messages = new List<IMessageSummary>();
             cancel = new CancellationTokenSource();            
@@ -27,11 +28,11 @@ namespace TelegramBot
         private async Task ReconnectAsync()
         {
             if (!client.IsConnected)
-                await client.ConnectAsync(configuration.Provaider, configuration.Port, true, cancel.Token);
+                await client.ConnectAsync(_configuration.Provaider, _configuration.Port, true, cancel.Token);
 
             if (!client.IsAuthenticated)
             {
-                await client.AuthenticateAsync(configuration.Loging, configuration.Password, cancel.Token);
+                await client.AuthenticateAsync(_configuration.Loging, _configuration.Password, cancel.Token);
 
                 await client.Inbox.OpenAsync(FolderAccess.ReadOnly, cancel.Token);
             }

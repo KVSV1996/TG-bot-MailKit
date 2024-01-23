@@ -5,11 +5,11 @@ namespace TelegramBot
 {
     public class Configuration
     {
-        public Configuration()
+        public Configuration(string filePath)
         {
             var builder = new ConfigurationBuilder()
                      .SetBasePath(Directory.GetCurrentDirectory())
-                     .AddJsonFile("appsettings.json", optional: false);
+                     .AddJsonFile(filePath, optional: false);
 
             IConfiguration config = builder.Build();
 
