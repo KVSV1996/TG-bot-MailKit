@@ -58,7 +58,7 @@ namespace TelegramBot
 
                 _storage.AddMessage(emailInfo);     //створений екземпляр класу EmailMessage додаємо в список, див. MailStorage
 
-                Log.Information(String.Format("Subject: {0} \nFrom: {1} \nDate: {2} \nTo: {3} \nCc: {4}", message.Subject, message.From, message.Date, message.To, message.Cc));                              
+                Log.Information(String.Format("\nSubject: {0} \nFrom: {1} \nDate: {2} \nTo: {3} \nCc: {4}", message.Subject, message.From, message.Date, message.To, message.Cc));                              
 
                 return; 
             }
@@ -159,9 +159,9 @@ namespace TelegramBot
                 int arrived = folder.Count - messages.Count;
 
                 if (arrived > 1)
-                    Log.Information("\t{0} new messages have arrived.", arrived);
+                    Log.Information("{0} new messages have arrived.", arrived);
                 else
-                    Log.Information("\t1 new message has arrived.");
+                    Log.Information("1 new message has arrived.");
                 
                 messagesArrived = true;     //тріггер, флаг показує, що відпрацювала подія
                 done?.Cancel();

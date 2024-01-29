@@ -4,6 +4,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TelegramBot.Info;
 using System.Threading;
+using System.Reflection;
 
 namespace TelegramBot
 {
@@ -32,16 +33,22 @@ namespace TelegramBot
         {          
             _botClient.StartReceiving(UpdateAsync, Exeption);       //запускаємо бота
             var idleTask = _imapIdle.RunAsync();                //запускаємо поштовик
+
+            var logPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "logs");
+            if (!Directory.Exists(logPath))
+            {
+                Directory.CreateDirectory(logPath);
+            }
+
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.Console()
+                .WriteTo.File(Path.Combine(logPath, "log.txt"), rollingInterval: RollingInterval.Day)
+                .CreateLogger();
         }
         public void Stop()
         {
-            _imapIdle.Exit();           
-
-            Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .WriteTo.Console()
-            .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
-            .CreateLogger();                        
+            _imapIdle.Exit();                                      
 
             Log.CloseAndFlush();
         }      
@@ -78,14 +85,23 @@ namespace TelegramBot
                     Log.Information($"ID[{massage.Chat.Id}]: /start");
                     if (!_subscribers.Contains(massage.Chat.Id))        //додавання чат ID в список користувачів бота
                     {
-                        _subscribers.Add(massage.Chat.Id);
-                        await Console.Out.WriteLineAsync(massage.Chat.Id.ToString());
+                        _subscribers.Add(massage.Chat.Id);                        
                     }
                     await botClient.SendTextMessageAsync(massage.Chat.Id, Constants.Head);
                     return;
                 }
+                else if (massage.Text == "/stop")
+                {
+                    Log.Information($"ID[{massage.Chat.Id}]: /stop");
+                    if (_subscribers.Contains(massage.Chat.Id))
+                    {
+                        _subscribers.Remove(massage.Chat.Id);
+                    }
+                    await botClient.SendTextMessageAsync(massage.Chat.Id, Constants.Stop);
+                    return;
+                }
                 return;
-            }                      
+            }            
         }
 
         private void StartMailKitProcessing(ITelegramBotClient botClient)
@@ -96,7 +112,7 @@ namespace TelegramBot
         private async Task CheckAndDisplayMessagesAsync(ITelegramBotClient botClient)
         {
             while (true)        //бескінечний цикл
-            {                
+            {                    
                 if (_storage.HasNewMessages())      //перевіряємо на наявність повідомлень
                 {
                     var mailContent = _storage.GetMessage();        //отримуємо повідомлення
@@ -119,16 +135,14 @@ namespace TelegramBot
 
                         foreach (var chatId in _subscribers)        //виводимо повідомлення користувачам, що підписалися
                         {
-                            await botClient.SendTextMessageAsync(chatId, String.Format("\u267F *Нове повідомлення на пошті*  \n\nНа пошту: {0}  \nТема: {1} \nВід: {2} \nДата: {3} \n\n _Нагадування про необхідність обробити почту, та відповісти на дане повідомлення_", fromMail, mailContent.Subject, mailContent.From, mailContent.Date), ParseMode.Markdown);
+                            await botClient.SendTextMessageAsync(chatId, String.Format("\u267F *Нове повідомлення на пошті*  \n\nНа пошту: {0}  \nТема: {1} \nВід: {2} \nДата: {3} \n\n_Нагадування про необхідність обробити почту, та відповісти на дане повідомлення_", fromMail, mailContent.Subject, mailContent.From, mailContent.Date), ParseMode.Markdown);
                         }
-                    }
-
-                    
+                    }                   
 
                     Log.Information("Очікування нового повідомлення");
-                }
-            }            
-        }              
+                }                
+            }          
+        }
 
         private Task Exeption(ITelegramBotClient arg1, Exception arg2, CancellationToken arg3)
         {
