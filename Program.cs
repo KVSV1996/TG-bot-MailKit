@@ -1,8 +1,6 @@
 ﻿using Serilog;
 using Microsoft.Extensions.DependencyInjection;
-using Refit;
 using Telegram.Bot;
-using MailKit.Net.Imap;
 using TelegramBot.Info;
 using Topshelf;
 using System.Reflection;
@@ -22,7 +20,13 @@ namespace TelegramBot
             .AddSingleton<IMailStorage, MailStorage>()            
             .AddSingleton<ProgramManager>()
             .BuildServiceProvider();
-            
+
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.Console()
+                .WriteTo.File(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "logs\\log.txt"), rollingInterval: RollingInterval.Day)
+                .CreateLogger();
+
 
             HostFactory.Run(x =>
             {

@@ -38,13 +38,7 @@ namespace TelegramBot
             if (!Directory.Exists(logPath))
             {
                 Directory.CreateDirectory(logPath);
-            }
-
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .WriteTo.Console()
-                .WriteTo.File(Path.Combine(logPath, "log.txt"), rollingInterval: RollingInterval.Day)
-                .CreateLogger();
+            }            
         }
         public void Stop()
         {
