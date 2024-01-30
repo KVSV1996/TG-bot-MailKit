@@ -13,9 +13,10 @@ namespace TelegramBot
         private readonly ITelegramBotClient _botClient;        
         private readonly IdleClient _imapIdle;        
         private List<long> _subscribers;
-        private bool flag = true;
+        private bool flag = true;        
         private readonly IMailStorage _storage;
         private readonly Configuration _configuration;
+        
 
 
         public ProgramManager( ITelegramBotClient botClient, IMailStorage storage, Configuration configuration)
@@ -105,6 +106,9 @@ namespace TelegramBot
 
         private async Task CheckAndDisplayMessagesAsync(ITelegramBotClient botClient)
         {
+            string lastMassages = "";
+            string currentMassages;
+
             while (true)        //бескінечний цикл
             {                    
                 if (_storage.HasNewMessages())      //перевіряємо на наявність повідомлень
@@ -125,11 +129,16 @@ namespace TelegramBot
                         else
                         {
                             fromMail = "Unknown";
-                        }
+                        }                                               
 
                         foreach (var chatId in _subscribers)        //виводимо повідомлення користувачам, що підписалися
                         {
-                            await botClient.SendTextMessageAsync(chatId, String.Format("\u267F *Нове повідомлення на пошті*  \n\nНа пошту: {0}  \nТема: {1} \nВід: {2} \nДата: {3} \n\n_Нагадування про необхідність обробити почту, та відповісти на дане повідомлення_", fromMail, mailContent.Subject, mailContent.From, mailContent.Date), ParseMode.Markdown);
+                            currentMassages = String.Format("\u267F *Нове повідомлення на пошті*  \n\nНа пошту: {0}  \nТема: {1} \nВід: {2} \nДата: {3} \n\n_Нагадування про необхідність обробити почту, та відповісти на дане повідомлення_", fromMail, mailContent.Subject, mailContent.From, mailContent.Date);
+                            if(currentMassages != lastMassages)
+                            {
+                                await botClient.SendTextMessageAsync(chatId, currentMassages, ParseMode.Markdown);
+                                lastMassages = currentMassages;
+                            }                            
                         }
                     }                   
 
