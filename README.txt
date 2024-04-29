@@ -1,4 +1,4 @@
-he project consists of two services:
+Project consists of two services:
 -TG bot
 - postcard
 
