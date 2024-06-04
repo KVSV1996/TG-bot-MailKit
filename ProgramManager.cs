@@ -3,20 +3,20 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TelegramBot.Info;
-using System.Threading;
 using System.Reflection;
+using Microsoft.Extensions.Hosting;
 
 namespace TelegramBot
 {
-    public class ProgramManager
+    public class ProgramManager : BackgroundService
     {        
-        private readonly ITelegramBotClient _botClient;        
-        private readonly IdleClient _imapIdle;        
+        private readonly ITelegramBotClient _botClient;
+        private readonly IdleClient _imapIdle;
         private List<long> _subscribers;
-        private bool flag = true;        
+        private bool flag = true;
         private readonly IMailStorage _storage;
         private readonly Configuration _configuration;
-        
+
 
 
         public ProgramManager( ITelegramBotClient botClient, IMailStorage storage, Configuration configuration)
@@ -39,17 +39,17 @@ namespace TelegramBot
             if (!Directory.Exists(logPath))
             {
                 Directory.CreateDirectory(logPath);
-            }            
+            }
         }
         public void Stop()
         {
-            _imapIdle.Exit();                                      
+            _imapIdle.Exit();
 
             Log.CloseAndFlush();
-        }      
+        }
 
         private async Task UpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken token)
-        {           
+        {
             var massage = update.Message;
             DateTime now = DateTime.UtcNow;
 
@@ -60,18 +60,17 @@ namespace TelegramBot
             }
 
             if(flag)
-            {                
-                StartMailKitProcessing(botClient);      //запускаємо моніторинг наявності нових листів, для розуміння див. клас IdleClient
+            {
                 flag = false;
-            }            
+            }
 
             if (massage.ReplyToMessage != null && (now - massage.ReplyToMessage.Date).TotalHours < 48 )        //видалення цитованих повідомлень
-            {               
-                await botClient.DeleteMessageAsync(massage.Chat.Id, massage.ReplyToMessage.MessageId);                
+            {
+                await botClient.DeleteMessageAsync(massage.Chat.Id, massage.ReplyToMessage.MessageId);
                 await botClient.DeleteMessageAsync(massage.Chat.Id, massage.MessageId);
 
                 return;
-            }            
+            }
 
             if (massage.Text != null)
             {
@@ -80,7 +79,7 @@ namespace TelegramBot
                     Log.Information($"ID[{massage.Chat.Id}]: /start");
                     if (!_subscribers.Contains(massage.Chat.Id))        //додавання чат ID в список користувачів бота
                     {
-                        _subscribers.Add(massage.Chat.Id);                        
+                        _subscribers.Add(massage.Chat.Id);
                     }
                     await botClient.SendTextMessageAsync(massage.Chat.Id, Constants.Head);
                     return;
@@ -96,21 +95,16 @@ namespace TelegramBot
                     return;
                 }
                 return;
-            }            
+            }
         }
 
-        private void StartMailKitProcessing(ITelegramBotClient botClient)
-        {
-            Task.Run(() => CheckAndDisplayMessagesAsync(botClient));
-        }
-
-        private async Task CheckAndDisplayMessagesAsync(ITelegramBotClient botClient)
+        private async Task CheckAndDisplayMessagesAsync(ITelegramBotClient botClient, CancellationToken stoppingToken)
         {
             string lastMassages = "";
             string currentMassages;
 
-            while (true)        //бескінечний цикл
-            {                    
+            while (!stoppingToken.IsCancellationRequested)        //бескінечний цикл
+            {
                 if (_storage.HasNewMessages())      //перевіряємо на наявність повідомлень
                 {
                     var mailContent = _storage.GetMessage();        //отримуємо повідомлення
@@ -129,7 +123,7 @@ namespace TelegramBot
                         else
                         {
                             fromMail = "Unknown";
-                        }                                               
+                        }
 
                         foreach (var chatId in _subscribers)        //виводимо повідомлення користувачам, що підписалися
                         {
@@ -138,20 +132,26 @@ namespace TelegramBot
                             {
                                 await botClient.SendTextMessageAsync(chatId, currentMassages, ParseMode.Markdown);
                                 lastMassages = currentMassages;
-                            }                            
+                            }
                         }
-                    }                   
+                    }
 
                     Log.Information("Очікування нового повідомлення");
-                }                
-            }          
+                }
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            }
         }
 
         private Task Exeption(ITelegramBotClient arg1, Exception arg2, CancellationToken arg3)
         {
             Log.Error($"An error occurred: {arg2.Message}");
-            
+         
             return Task.CompletedTask;
+        }
+
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            return Task.Run(() => CheckAndDisplayMessagesAsync(_botClient, stoppingToken), stoppingToken);
         }
     }
 }

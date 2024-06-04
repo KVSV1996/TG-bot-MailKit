@@ -11,7 +11,7 @@ namespace TelegramBot
         private CancellationTokenSource cancel;
         private CancellationTokenSource done;
         private readonly ImapClient client;
-        private bool messagesArrived;        
+        private bool messagesArrived;
         private readonly Configuration _configuration;
         private readonly IMailStorage _storage;
 
@@ -21,7 +21,7 @@ namespace TelegramBot
             this._configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             client = new ImapClient(new ProtocolLogger(Console.OpenStandardError()));            
             messages = new List<IMessageSummary>();
-            cancel = new CancellationTokenSource();            
+            cancel = new CancellationTokenSource();
 
         }
 
@@ -43,7 +43,7 @@ namespace TelegramBot
             try
             {
                 var inbox = client.Inbox;
-                inbox.Open(FolderAccess.ReadOnly);                 
+                inbox.Open(FolderAccess.ReadOnly);
                 
                 var message = inbox.GetMessage(inbox.Count - 1);        //отримуємо останній лист (повідомлення) по індексу             
 
@@ -63,7 +63,7 @@ namespace TelegramBot
                 return; 
             }
             catch (Exception ex)
-            {                
+            {
                 Log.Error($"An error occurred: {ex.Message}");
                 return; 
             }
@@ -76,7 +76,7 @@ namespace TelegramBot
                 try
                 {
                     if (client.Capabilities.HasFlag(ImapCapabilities.Idle))
-                    {                        
+                    {
                         done = new CancellationTokenSource(new TimeSpan(0, 9, 0));
                         try
                         {
@@ -89,18 +89,18 @@ namespace TelegramBot
                         }
                     }
                     else
-                    {                        
+                    {
                         await Task.Delay(new TimeSpan(0, 1, 0), cancel.Token);
                         await client.NoOpAsync(cancel.Token);
                     }
                     break;
                 }
                 catch (ImapProtocolException)
-                {                    
+                {
                     await ReconnectAsync();
                 }
                 catch (IOException)
-                {                    
+                {
                     await ReconnectAsync();
                 }
             } while (true);
@@ -131,7 +131,7 @@ namespace TelegramBot
         {            
             try
             {
-                await ReconnectAsync();                
+                await ReconnectAsync();
             }
             catch (OperationCanceledException)
             {
