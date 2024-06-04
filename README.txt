@@ -1,8 +1,8 @@
-Проєкт складається з двох сервісів:
-	-ТГ бот
-	-поштовик
+Project consists of two services:
+-TG bot
+- postcard
 
-Сервіси працюють незалежно один від одного. 
+Services work independently of each other.
 
-Поштовик при спрацюванні триггера на зміні кількості повідомлень в поштовій скриньці додає останній лист до класу MailStorage.
-З боку ТГ бота запущенний метод, який постійно перевіряє наявність нових листів у класі MailStorage, при їх появі - виводить лист та видаляє його.
+Mailbox adds the last letter to the MailStorage class when the trigger is triggered on a change in the number of messages in the mailbox.
+On the part of the TG bot, a method is launched that constantly checks the presence of new letters in the MailStorage class, when they appear, displays the letter and deletes it.
