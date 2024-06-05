@@ -34,40 +34,48 @@ namespace TelegramBot
 
             while (!stoppingToken.IsCancellationRequested)        //бескінечний цикл
             {
-                if (_storage.HasNewMessages())      //перевіряємо на наявність повідомлень
+                try
                 {
-                    var mailContent = _storage.GetMessage();        //отримуємо повідомлення
-                    string fromMail;
-
-                    if (mailContent.Subject.Substring(0, 2) != "RE")
+                    if (_storage.HasNewMessages())      //перевіряємо на наявність повідомлень
                     {
-                        if (mailContent.To.Contains("support@callway.com.ua") || mailContent.Cc.Contains("support@callway.com.ua"))     //перевіряємо, з якої пошти надішло повідомлення
-                        {
-                            fromMail = "support@callway.com.ua";
-                        }
-                        else if (mailContent.To.Contains("support@ukrods.com.ua") || mailContent.Cc.Contains("support@ukrods.com.ua"))
-                        {
-                            fromMail = "support@ukrods.com.ua";
-                        }
-                        else
-                        {
-                            fromMail = "Unknown";
-                        }
+                        var mailContent = _storage.GetMessage();        //отримуємо повідомлення
+                        string fromMail;
 
-                        foreach (var chatId in _subscriberStorage.GetSubscribers())        //виводимо повідомлення користувачам, що підписалися
+                        if (mailContent.Subject.Substring(0, 2) != "RE")
                         {
-                            currentMassages = String.Format("\u267F *Нове повідомлення на пошті*  \n\nНа пошту: {0}  \nТема: {1} \nВід: {2} \nДата: {3} \n\n_Нагадування про необхідність обробити почту, та відповісти на дане повідомлення_", fromMail, mailContent.Subject, mailContent.From, mailContent.Date);
-                            if (currentMassages != lastMassages)
+                            if (mailContent.To.Contains("support@callway.com.ua") || mailContent.Cc.Contains("support@callway.com.ua"))     //перевіряємо, з якої пошти надішло повідомлення
                             {
-                                await botClient.SendTextMessageAsync(chatId, currentMassages, ParseMode.Markdown);
-                                lastMassages = currentMassages;
+                                fromMail = "support@callway.com.ua";
+                            }
+                            else if (mailContent.To.Contains("support@ukrods.com.ua") || mailContent.Cc.Contains("support@ukrods.com.ua"))
+                            {
+                                fromMail = "support@ukrods.com.ua";
+                            }
+                            else
+                            {
+                                fromMail = "Unknown";
+                            }
+
+                            foreach (var chatId in _subscriberStorage.GetSubscribers())        //виводимо повідомлення користувачам, що підписалися
+                            {
+                                currentMassages = String.Format("\u267F *Нове повідомлення на пошті*  \n\nНа пошту: {0}  \nТема: {1} \nВід: {2} \nДата: {3} \n\n_Нагадування про необхідність обробити почту, та відповісти на дане повідомлення_", fromMail, mailContent.Subject, mailContent.From, mailContent.Date);
+                                if (currentMassages != lastMassages)
+                                {
+                                    await botClient.SendTextMessageAsync(chatId, currentMassages, ParseMode.Markdown);
+                                    lastMassages = currentMassages;
+                                }
                             }
                         }
-                    }
 
-                    Log.Information("Очікування нового повідомлення");
+                        Log.Information("Очікування нового повідомлення");
+                    }
+                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
                 }
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                catch (Exception ex)
+                {
+                    Log.Information(ex, "An error occurred in the CheckAndDisplayMessagesAsync loop. Restarting the loop.");
+                    await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+                }                
             }
         }
     }
