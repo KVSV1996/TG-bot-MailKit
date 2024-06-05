@@ -4,6 +4,8 @@ using Telegram.Bot;
 using TelegramBot.Info;
 using Topshelf;
 using System.Reflection;
+using TelegramBot.Info.Interface;
+using Microsoft.Extensions.Hosting;
 
 
 namespace TelegramBot
@@ -18,7 +20,9 @@ namespace TelegramBot
             .AddSingleton<Configuration>(new Configuration(configPath))
             .AddSingleton<ITelegramBotClient>(t => new TelegramBotClient(configuration.Token))
             .AddSingleton<IMailStorage, MailStorage>()
-            .AddHostedService<ProgramManager>()
+            .AddSingleton<ISubscriberStorage , SubscriberStorage>()
+            .AddSingleton<ProgramManager>()
+            .AddHostedService<BotManager>()
             .BuildServiceProvider();
 
             Log.Logger = new LoggerConfiguration()
