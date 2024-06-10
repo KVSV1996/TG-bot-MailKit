@@ -19,7 +19,7 @@ namespace TelegramBot
         {
             this._storage = storage ?? throw new ArgumentNullException(nameof(storage));
             this._configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            client = new ImapClient(new ProtocolLogger(Console.OpenStandardError()));            
+            client = new ImapClient(new ProtocolLogger(Console.OpenStandardError()));
             messages = new List<IMessageSummary>();
             cancel = new CancellationTokenSource();
 

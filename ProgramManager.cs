@@ -13,23 +13,23 @@ namespace TelegramBot
     {        
         private readonly ITelegramBotClient _botClient;
         private readonly IdleClient _imapIdle;
-        //private List<long> _subscribers;
         private bool flag = true;
         private readonly IMailStorage _storage;
         private readonly Configuration _configuration;
         private readonly ISubscriberStorage _subscriberStorage;
         private CancellationTokenSource stoppingToken;
+        private IChatIdStorage _chatIdStorage;
 
 
-        public ProgramManager( ITelegramBotClient botClient, IMailStorage storage, Configuration configuration, ISubscriberStorage subscriberStorage)
+        public ProgramManager( ITelegramBotClient botClient, IMailStorage storage, Configuration configuration, ISubscriberStorage subscriberStorage, IChatIdStorage chatIdStorage)
         {
             this._configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             this._botClient = botClient ?? throw new ArgumentNullException(nameof(botClient));
             this._storage = storage ?? throw new ArgumentNullException(nameof(storage));
-            //_subscribers = new List<long>();
             _storage = new MailStorage();
             _imapIdle = new IdleClient(_storage, _configuration);
             _subscriberStorage = subscriberStorage ?? throw new ArgumentNullException(nameof(subscriberStorage));
+            _chatIdStorage = chatIdStorage;
         }
 
         public void Start()
@@ -37,6 +37,7 @@ namespace TelegramBot
             stoppingToken = new CancellationTokenSource();
             _botClient.StartReceiving(UpdateAsync, Exeption);       //запускаємо бота
             var idleTask = _imapIdle.RunAsync();                //запускаємо поштовик
+            AddChatIdFromFile();
             Task.Run(() => CheckAndDisplayMessagesAsync(_botClient, stoppingToken.Token), stoppingToken.Token);
 
             var logPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "logs");
@@ -83,6 +84,7 @@ namespace TelegramBot
                     if (!_subscriberStorage.Contains(massage.Chat.Id))        //додавання чат ID в список користувачів бота
                     {
                         _subscriberStorage.AddSubscriber(massage.Chat.Id);
+                        _chatIdStorage.AddChatId(massage.Chat.Id);
                     }
                     await botClient.SendTextMessageAsync(massage.Chat.Id, Constants.Head);
                     return;
@@ -93,6 +95,7 @@ namespace TelegramBot
                     if (_subscriberStorage.Contains(massage.Chat.Id))
                     {
                         _subscriberStorage.RemoveSubscriber(massage.Chat.Id);
+                        _chatIdStorage.RemoveChatId(massage.Chat.Id);
                     }
                     await botClient.SendTextMessageAsync(massage.Chat.Id, Constants.Stop);
                     return;
@@ -141,7 +144,7 @@ namespace TelegramBot
                             }
                         }
 
-                        Log.Information("Очікування нового повідомлення");
+                        //Log.Information("Очікування нового повідомлення");
                     }
                     await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
                 }
@@ -160,9 +163,13 @@ namespace TelegramBot
             return Task.CompletedTask;
         }
 
-        //protected override Task ExecuteAsync(CancellationToken stoppingToken)
-        //{
-        //    return Task.Run(() => CheckAndDisplayMessagesAsync(_botClient, stoppingToken), stoppingToken);
-        //}
+        private void AddChatIdFromFile()
+        {
+            var loadedChatIds = _chatIdStorage.LoadChatIds();
+            foreach (var chatId in loadedChatIds)
+            {
+                _subscriberStorage.AddSubscriber(chatId); // добавление ID в модель
+            }
+        }
     }
 }
